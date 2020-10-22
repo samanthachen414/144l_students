@@ -1,0 +1,41 @@
+---
+title: "Intro2Rmarkdown"
+author: "Samantha Chen"
+date: "10/21/2020"
+output: github_document
+---
+
+# title
+## title
+### title
+
+basic text,
+
+*italicize* single asterisk
+
+**bold** double asterisks
+
+1. make
+2. numbered
+3. lists
+
+we can make:
+- unnumbered
+- lists
+
+[link here](https://google.com)
+
+
+# Code Chunk
+
+to add code, make a chunk by clicking (Insert and then R)
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+# install.packages("RColorBrewer")
+library(RColorBrewer)
+```
+
+or by using shortcuts, on mac (cmd +alt + i) and on pc (ctrl + alt + i)
+
