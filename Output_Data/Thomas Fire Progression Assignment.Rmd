@@ -1,0 +1,51 @@
+---
+title: "Thomas Fire Progression Assignment"
+author: "Samantha Chen"
+date: "10/28/2020"
+output: github_document
+---
+For this assignment I will be analyzing data collected during the Thomas Fire. 
+
+# **Data/Data Table**
+```{r warning=FALSE}
+library(tidyverse)
+library(readxl)
+excel_sheets("~/GitHub EEMB 144L/144l_students/Input_Data/week1/Thomas_Fire_Progression.xlsx") 
+thomasfire.data <- read_excel("~/GitHub EEMB 144L/144l_students/Input_Data/week1/Thomas_Fire_Progression.xlsx") #can't knit read_excel
+
+
+glimpse(thomasfire.data)
+
+```
+Looking at the data, I will be creating two plots that looks at air quality of both PM10 and PM2.5 over the course of the Thomas Fire.
+```{r}
+PM10.data <- thomasfire.data %>% 
+  select(Date, PM10) %>% 
+  mutate_at(vars(PM10), replace_na, 93) %>% 
+  rename(Concentration = PM10)
+PM25.data <- thomasfire.data %>% 
+  select(Date, PM25) %>% 
+  rename(Concentration = PM25) #how to add units?
+```
+
+# **Graphs**
+*Thomas Fire Air Quality Index PM10*
+```{r}
+ggplot(PM10.data, aes(x = Date, y = Concentration)) + 
+  geom_line(aes(color = Concentration)) +
+  labs(title = "Thomas Fire Air Quality Index PM10", y = "Concentration (µg/cubic meter)") +
+  theme_bw()
+
+```
+
+From this graph, I can see that the concentration of particulate matter that were 10 micrometers (and smaller) decreased over time. This is most likely due to the fact that over time, the fire was slowly contained and put out, so less ash was present in the air. What is interesting is how the concentration fluctuates up and down instead of following a general downhill trend. 
+
+*Thomas Fire Air Quality Index PM2.5*
+```{r}
+ggplot(PM25.data, aes(x = Date, y = Concentration)) + 
+  geom_line(aes(color = Concentration)) +
+  labs(title = "Thomas Fire Air Quality Index PM2.5", y = "Concentration (µg/cubic meter)") +
+  theme_bw()
+```
+
+From this graph, the first thing I noticed was the much higher peak that surpasses 200 µg/cubic meter indicating a higher concentration of PM2.5 than PM10. This tells me that in a non-contained fire a much higher concentration of PM2.5 is released into the air, which can be a health hazard. Fortunately, this graph also shows a decrease in concentration over time, and, unlike PM10, its concentration drops much more dramatically. 
