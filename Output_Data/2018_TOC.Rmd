@@ -1,0 +1,122 @@
+---
+title: "2018_TOC"
+author: "Samantha Chen"
+date: "11/11/2020"
+output: github_document
+---
+
+# Intro
+
+This document will show how **individual bottle** TOC/DOC data from 2018 remineralization experiments were processed, QC'd, and analyzed.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+```
+
+```{r}
+excel_sheets("~/GitHub EEMB 144L/144l_students/Input_Data/week4/144L_2018_Exp_TOC.xlsx")
+
+metadata <- read_excel("~/GitHub EEMB 144L/144l_students/Input_Data/week4/144L_2018_Exp_TOC.xlsx", sheet = "Metadata")
+
+data <- read_excel("~/GitHub EEMB 144L/144l_students/Input_Data/week4/144L_2018_Exp_TOC.xlsx", sheet = "Data")
+
+joined_data <- left_join(metadata, data)
+```
+```{r}
+toc <- joined_data %>% 
+  mutate(Datetime = ymd_hm(Datetime)) %>% 
+  group_by(Bottle, Treatment) %>% 
+  mutate(interv = interval(first(Datetime), Datetime),
+         hours = interv/3600,
+         days = hours/24) %>% 
+  ungroup() %>%
+  rename(sd_TOC = TOC_sd,
+         sd_PTOC = PTOC_sd) %>% 
+  select(Experiment:Datetime, TOC:days)
+```
+
+```{r}
+pivot_toc <- toc %>% 
+  select(Experiment, Location, Bottle, Treatment, days, TOC, PTOC) %>% 
+  pivot_longer(TOC:PTOC, names_to = "sample", values_to = "value") #expand rows, decrease columns
+
+pivot_toc_sd <- toc %>% 
+  select(Experiment, Location, Bottle, Treatment, days, sd_TOC, sd_PTOC) %>% 
+  pivot_longer(sd_TOC:sd_PTOC, names_to = "sample", names_prefix = "sd_", values_to = "sd")
+
+pivoted <- left_join(pivot_toc, pivot_toc_sd) %>% 
+  mutate(sample = ifelse(sample == "TOC", "Bottle", "Vial"))
+
+view(pivoted)
+```
+
+
+# TOC Plot
+
+```{r fig.height=10, fig.width=8}
+custom.colors <- c("Control" = "#2c7fb8", "Ash Leachate" = "#7fcdbb", "Mud Leachate" = "#756bb1", "Glucose_Nitrate_Phosphate" = "#fc8d62", "Bottle" = "#c51b8a", "Vial" = "#1f78b4")
+levels <- c("Control", "Ash Leachate", "Mud Leachate", "Glucose_Nitrate_Phosphate", "Bottle", "Vial")
+
+pivoted %>% 
+  drop_na(value) %>% 
+  mutate(Treatment = factor(Treatment, levels = levels),
+        sample = factor(sample, levels = levels)) %>% 
+  ggplot(aes(x = days, y = value, group = interaction(Treatment, Bottle))) +
+  geom_errorbar(aes(ymin = value - sd, ymax = value + sd, color = sample), width = 0.4) +
+  geom_point(aes(fill = sample), size = 3, shape = 21, alpha = 0.7) +
+  scale_color_manual(values = custom.colors) +
+  scale_fill_manual(values = custom.colors) +
+  labs(x = "Days", y = expression("Total Organic Carbon µmol C L"^-1), color = "", fill = "") +
+  theme_bw() +
+  facet_grid(rows = "Treatment", scales = "free") +
+  guides(color = F)
+  
+```
+Ash and GNP follows a very similar trend in which TOC decreases as days increases. You don't see a dramatic decrease in TOC in Mud and Control compared to Ash and GNP.
+
+The analytical detection limit for our TOC analysis is ~1.5 µmol C L"^-1.
+
+# TOC v. PTOC (Bottle v. Vial Samples)
+
+```{r message=FALSE, warning=FALSE}
+# install.packages("lmodel2")
+library(lmodel2)
+
+reg.data <- toc %>% 
+  drop_na(TOC) %>% 
+  filter(Timepoint > 0)
+
+reg <- lmodel2(PTOC ~ TOC, data = reg.data, nperm = 99)
+
+reg
+```
+```{r}
+intercept <- reg$regression.results[3,2]
+slope <- reg$regression.results[3,3]
+
+two_int <- reg$confidence.intervals[3,2]
+two_slope <- reg$confidence.intervals[3,4]
+nine_int <- reg$confidence.intervals[3,3]
+nine_slope <- reg$confidence.intervals[3,5]
+```
+```{r fig.height=4, fig.width=7}
+reg.data %>% 
+  ggplot(aes(x = TOC, y = PTOC)) +
+  geom_errorbar(aes(ymin = PTOC - sd_PTOC, ymax = PTOC + sd_PTOC), width = 0.05) +
+  # geom_errorbarh(aes(xmin = TOC - sd_TOC, xmax = PTOC + sd_PTOC), width = 0.05) +
+  geom_point(fill = "white", shape = 21, size = 4, alpha = 0.7) +
+  geom_abline(intercept = intercept, slope = slope, linetype = 2, size = 1) +
+  geom_abline(intercept = two_int, slope = two_slope, color = "black", linetype = 3, size = 1) +
+  geom_abline(intercept = nine_int, slope = nine_slope, color = "black", linetype = 3, size = 1) +
+  labs(x = expression("Bottle TOC, µmol C L"^-1), y = expression("Vial TOC, µmol C L"^-1)) +
+  theme_bw() +
+  annotate( geom = "text", label = expression(atop("y = 1.03x - 2.12", paste("r"^2," = 0.97, ", italic("p "), "= 0.01"))), x = 90, y = 85, size = 3)
+```
+```{r}
+bc <- read_rds("~/GitHub EEMB 144L/144l_students/Output_Data/ACIDD_exp_Processed_BactAbund.rds")
+
+view(bc)
+```
+

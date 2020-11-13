@@ -1,0 +1,48 @@
+---
+title: "ACIDD_TOC"
+author: "Samantha Chen"
+date: "11/11/2020"
+output: github_document
+---
+# Intro
+
+This document shows how **individual bottle** TOC/DOC data from ACIDD remineralization experiments were processed, QC'd, and analyzed.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+```
+
+# Import Data
+
+```{r}
+excel_sheets("~/GitHub EEMB 144L/144l_students/Input_Data/week4/ACIDD_Exp_TOC.xlsx")
+
+metadata <- read_excel("~/GitHub EEMB 144L/144l_students/Input_Data/week4/ACIDD_Exp_TOC.xlsx", sheet = "Metadata")
+
+data <- read_excel("~/GitHub EEMB 144L/144l_students/Input_Data/week4/ACIDD_Exp_TOC.xlsx", sheet = "Data")
+
+```
+
+```{r}
+joined <- left_join(metadata, data)
+```
+
+```{r}
+toc <- joined %>% 
+  mutate(Datetime = ymd_hm(Datetime)) %>% 
+  group_by(Experiment, Bottle) %>% 
+  mutate(interv = interval(first(Datetime), Datetime),
+        hours = interv/3600,
+        days = hours/24) %>%
+  ungroup() %>% 
+  rename(sd_TOC = TOC_sd,
+         sd_PTOC = PTOC_sd) %>% 
+  select(Experiment:Datetime, hours, days, everything(), -interv)
+
+#subset <- toc %>% 
+  #select(Experiment, Bottle, Datetime, interv)
+#view(subset)
+```
+

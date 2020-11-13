@@ -207,4 +207,7 @@ delta_bc2018 + mew2018 + doubling2018 + plot_annotation(tag_levels = "a")
 (a) GNP had the highest delta bacterial carbon telling me that GNP had the most amount of bacterial carbon which means the highest abundance of bacteria. Out of mud and ash, it was ash that had more bacterial carbon therefore ash yielded a higher abundance of bacteria. (b) Ash leachate had the highest specific growth rate while control had the lowest (c) This plot shows an inverse relationship between specific growth rate and doubling time in which the higher the specific growth rate, the shorter amount of time it takes for the bacteria to double. As expected, Ash has the shortest doubling time.
 
 
+```{r}
+saveRDS(averages2018, file = "2018_BactAbund.rds")
+```
 
