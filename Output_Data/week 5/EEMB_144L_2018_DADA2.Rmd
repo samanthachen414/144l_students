@@ -107,3 +107,51 @@ dadaFs <- dada(derepFs, err = errF, multithread = TRUE)
 dadaRs <- dada(derepRs, err = errR, multithread = TRUE)
 ```
 
+```{r}
+mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose = TRUE, trimOverhang = T)
+```
+
+```{r}
+head(mergers[[1]])
+```
+
+```{r}
+saveRDS(mergers, "~/GitHub EEMB 144L/144l_students/Output_Data/week 5/dada_merged.rds")
+saveRDS(mergers, "~/GitHub EEMB 144L/144l_students/Output_Data/week 6/dada_merged.rds")
+```
+
+# Sequence Table
+
+```{r}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+```
+
+```{r}
+table(nchar(getSequences(seqtab)))
+```
+
+# Removing Chimeras
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, verbose = TRUE)
+dim(seqtab.nochim)
+```
+
+```{r}
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+# Taxonomy
+
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, "~/GitHub EEMB 144L/144l_students/Input_Data/week5/Reference_Database/silva_nr_v138_train_set.fa", multithread = TRUE)
+```
+
+```{r}
+saveRDS(t(seqtab.nochim), "~/GitHub EEMB 144L/144l_students/Output_Data/week 5/seqtab-nochimtaxa.rds")
+saveRDS(taxa,"~/GitHub EEMB 144L/144l_students/Output_Data/week 5/taxa.rds")
+saveRDS(t(seqtab.nochim), "~/GitHub EEMB 144L/144l_students/Input_Data/week6/seqtab-nochimtaxa.rds")
+saveRDS(taxa,"~/GitHub EEMB 144L/144l_students/Input_Data/week6/taxa.rds")
+```
+
